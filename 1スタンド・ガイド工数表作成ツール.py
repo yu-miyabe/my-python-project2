@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import openpyxl
 import io
+import os
 
 st.title("スタンド・ガイド正規出図工数表作成ツール")
 
 # プルダウンで選択（A〜L + 空白）
 options = [chr(i) for i in range(ord('A'), ord('L') + 1)] + ["（空白）"]
-selected_letter = st.selectbox(" 出荷区分を選択", options)
+selected_letter = st.selectbox("出荷区分を選択", options)
 
 # 協力会社リスト（新しい内容）
 company_options = [
@@ -22,16 +23,19 @@ company_options = [
 ]
 
 # 設計会社の選択
-stand_company = st.selectbox(" スタンド設計会社を選択", company_options)
-guide_company = st.selectbox(" ガイド設計会社を選択", company_options)
+stand_company = st.selectbox("スタンド設計会社を選択", company_options)
+guide_company = st.selectbox("ガイド設計会社を選択", company_options)
 
-# Excelファイルのアップロード
+# Excelファイルのアップロード（仕様一覧表）
 uploaded_file = st.file_uploader("📁 仕様一覧表(xlsm)をアップロードしてください", type=["xlsx", "xlsm"])
 
-# 書き込み対象ファイルのパス（固定）
-target_path = r"C:\Users\200804\home\スタンドガイド工数計画_v11.XLSX"
+# テンプレートファイルの相対パス（GitHubリポジトリに含める）
+template_path = "スタンドガイド工数計画_v11.XLSX"
 
-if uploaded_file:
+# ファイル存在チェック
+if not os.path.exists(template_path):
+    st.error("❌ テンプレートファイルが見つかりません。GitHub に 'スタンドガイド工数計画_v11.XLSX' を正しくアップロードしてください。")
+elif uploaded_file:
     try:
         # 集計処理
         df = pd.read_excel(uploaded_file, sheet_name="仕様一覧表", engine="openpyxl")
@@ -63,8 +67,8 @@ if uploaded_file:
             st.success(f"✅ 出荷区分が '{label}' （{count} 機番）の総機長は：{total_distance:.2f}m")
             st.dataframe(filtered_df)
 
-            # Excelファイル読み込み＆書き込み
-            wb = openpyxl.load_workbook(target_path)
+            # テンプレートファイル読み込み＆書き込み
+            wb = openpyxl.load_workbook(template_path)
             for sheet_name, company_value in zip(
                 ["スタンド正規出図", "ガイド正規出図"],
                 [stand_company, guide_company]
